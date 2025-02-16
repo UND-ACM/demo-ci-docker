@@ -28,7 +28,7 @@ jobs:
         with:
           name: 'container_tarball_${{ github.workflow_sha }}'
       - name: Load image
-        run: gunzip -c ${{ github.workflow_sha }}.tar.gz | docker import - hello:latest
+        run: gunzip -c ${{ github.workflow_sha }}.tar.gz | docker load
       - name: Spin up container
         run: docker run -d --name helloworld hello:latest
       - name: Await healthy or failed status
