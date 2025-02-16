@@ -26,7 +26,6 @@ jobs:
       - uses: actions/download-artifact@v4
         name: Download workflow artifact
         with:
-          path: '${{ github.workflow_sha }}.tar.gz'
           name: 'container_tarball_${{ github.workflow_sha }}'
       - name: Load image
         run: gunzip -c ${{ github.workflow_sha }}.tar.gz | docker load
