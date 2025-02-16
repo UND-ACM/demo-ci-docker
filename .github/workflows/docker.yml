@@ -29,13 +29,13 @@ jobs:
           path: '${{ github.workflow_sha }}.tar.gz'
           name: 'container_tarball_${{ github.workflow_sha }}'
       - name: Load image
-        run: docker load < ${{ github.workflow_sha }}.tar.gz
+        run: gunzip -c ${{ github.workflow_sha }}.tar.gz | docker load
       - name: Spin up container
         run: docker run -d --name helloworld hello:latest
       - name: Await healthy or failed status
         run: |
           while(true); do
-            STATUS=$(docker inspect --format='{{json .State.Health}}' helloworld | jq ".Status");
+            STATUS=$(docker inspect --format='{{json .State.Health.Status}}' helloworld);
             if [[ "$STATUS" =~ "unhealthy" ]]; then
               echo "Container unhealthy, oh no!";
               exit 1;
