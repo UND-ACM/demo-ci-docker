@@ -12,12 +12,12 @@ jobs:
       - name: Build container
         run: docker buildx build -f Dockerfile . -t UND-ACM/hello:latest
       - name: Export container
-        run: docker save hello:latest | gzip - > ${{ GITHUB_WORKFLOW_SHA }}.tar.gz
+        run: docker save hello:latest | gzip - > ${{ github.workflow_sha }}.tar.gz
       - uses: actions/upload-artifact@v4
         name: Upload artifact
         with:
-          path: '${{ GITHUB_WORKFLOW_SHA }}.tar.gz'
-          name: 'container_tarball_${{ GITHUB_WORKFLOW_SHA }}'
+          path: '${{ github.workflow_sha }}.tar.gz'
+          name: 'container_tarball_${{ github.workflow_sha }}'
   test:
     name: Test container functionality
     runs-on: ubuntu-latest
@@ -26,10 +26,10 @@ jobs:
       - uses: actions/download-artifact@v4
         name: Download workflow artifact
         with:
-          path: '${{ GITHUB_WORKFLOW_SHA }}.tar.gz'
-          name: 'container_tarball_${{ GITHUB_WORKFLOW_SHA }}'
+          path: '${{ github.workflow_sha }}.tar.gz'
+          name: 'container_tarball_${{ github.workflow_sha }}'
       - name: Load image
-        run: docker load < ${{ GITHUB_WORKFLOW_SHA }}.tar.gz
+        run: docker load < ${{ github.workflow_sha }}.tar.gz
       - name: Spin up container
         run: docker run -d --name helloworld hello:latest
       - name: Await healthy or failed status
