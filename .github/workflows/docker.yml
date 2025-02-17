@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Parse SHA
         id: parse
-        run: echo "TAG=main_$(cut -c 1-8 <<< '${{ github.workflow_sha }}')" >> "$GITHUB_OUTPUT"
+        run: echo "TAG=main_$(cut -c 1-7 <<< '${{ github.workflow_sha }}')" >> "$GITHUB_OUTPUT"
   compile:
     name: Compile container with Docker Buildx
     needs: tag
@@ -40,7 +40,7 @@ jobs:
       - name: Load image
         run: gunzip -c ${{ needs.tag.outputs.tag }}.tar.gz | docker load
       - name: Spin up container
-        run: docker run -d --name helloworld UND-ACM/demo-ci-docker:${{ needs.tag.outputs.tag }}
+        run: docker run -d --name helloworld demo-ci-docker
       - name: Await healthy or failed status
         run: |
           while(true); do
