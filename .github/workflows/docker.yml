@@ -40,7 +40,7 @@ jobs:
       - name: Load image
         run: gunzip -c ${{ needs.tag.outputs.tag }}.tar.gz | docker load
       - name: Spin up container
-        run: docker run -d --name helloworld demo-ci-docker
+        run: docker run -d --name helloworld UND-ACM/demo-ci-docker:latest
       - name: Await healthy or failed status
         run: |
           while(true); do
