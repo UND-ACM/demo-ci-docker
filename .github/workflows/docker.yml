@@ -7,9 +7,12 @@ jobs:
   tag:
     name: Generate container tag from workflow SHA
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.parse.outputs.tag }}
     steps:
       - name: Parse SHA
-        run: echo "CONTAINER_TAG=main_$(cut -c 1-8 <<< '${{ github.workflow_sha }}')" >> $GITHUB_ENV
+        id: parse
+        run: echo "TAG=main_$(cut -c 1-8 <<< '${{ github.workflow_sha }}')" >> "$GITHUB_OUTPUT"
   compile:
     name: Compile container with Docker Buildx
     needs: tag
@@ -17,14 +20,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build container
-        run: docker buildx build -f Dockerfile . -t UND-ACM/demo-ci-docker:latest -t UND-ACM/demo-ci-docker:main_${{ env.CONTAINER_TAG }}
+        run: docker buildx build -f Dockerfile . -t UND-ACM/demo-ci-docker:latest -t UND-ACM/demo-ci-docker:${{ needs.tag.outputs.tag }}
       - name: Export container
-        run: docker save UND-ACM/demo-ci-docker:latest | gzip - > ${{ env.CONTAINER_TAG }}.tar.gz
+        run: docker save UND-ACM/demo-ci-docker:latest | gzip - > ${{ needs.tag.outputs.tag }}.tar.gz
       - uses: actions/upload-artifact@v4
         name: Upload artifact
         with:
-          path: '${{ env.CONTAINER_TAG }}.tar.gz'
-          name: 'container_tarball_${{ env.CONTAINER_TAG }}'
+          path: '${{ needs.tag.outputs.tag }}.tar.gz'
+          name: 'container_tarball_${{ needs.tag.outputs.tag }}'
   test:
     name: Test container health
     runs-on: ubuntu-latest
@@ -33,11 +36,11 @@ jobs:
       - uses: actions/download-artifact@v4
         name: Download workflow artifact
         with:
-          name: 'container_tarball_${{ env.CONTAINER_TAG }}'
+          name: 'container_tarball_$${{ needs.tag.outputs.tag }}'
       - name: Load image
-        run: gunzip -c ${{ env.CONTAINER_TAG }}.tar.gz | docker load
+        run: gunzip -c ${{ needs.tag.outputs.tag }}.tar.gz | docker load
       - name: Spin up container
-        run: docker run -d --name helloworld UND-ACM/demo-ci-docker:${{ env.CONTAINER_TAG }}
+        run: docker run -d --name helloworld UND-ACM/demo-ci-docker:${{ needs.tag.outputs.tag }}
       - name: Await healthy or failed status
         run: |
           while(true); do
@@ -64,9 +67,9 @@ jobs:
       - uses: actions/download-artifact@v4
         name: Download workflow artifact
         with:
-          name: 'container_tarball_${{ env.CONTAINER_TAG }}'
+          name: 'container_tarball_${{ needs.tag.outputs.tag }}'
       - name: Load image
-        run: gunzip -c ${{ env.CONTAINER_TAG }}.tar.gz | docker load
+        run: gunzip -c ${{ needs.tag.outputs.tag }}.tar.gz | docker load
       - name: Log In to Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Publish Image
