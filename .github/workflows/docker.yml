@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Parse SHA
-        run: echo "CONTAINER_TAG=main_${${{ github.workflow_sha }}::7}" >> $GITHUB_ENV
+        run: echo "CONTAINER_TAG=main_$(cut -c 1-8 <<< '${{ github.workflow_sha }}')" >> $GITHUB_ENV
   compile:
     name: Compile container with Docker Buildx
     needs: tag
