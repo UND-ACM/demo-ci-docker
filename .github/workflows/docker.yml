@@ -9,28 +9,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Parse Commit SHA to Container Tag
+        run: echo "CONTAINER_TAG=main_$(git log --pretty=format:'%h' -n 1)" >> $GITHUB_ENV
       - name: Build container
-        run: docker buildx build -f Dockerfile . -t UND-ACM/hello:latest
+        run: docker buildx build -f Dockerfile . -t UND-ACM/demo-ci-docker:latest -t UND-ACM/demo-ci-docker:main_${{ env.CONTAINER_TAG }}
       - name: Export container
-        run: docker save UND-ACM/hello:latest | gzip - > ${{ github.workflow_sha }}.tar.gz
+        run: docker save UND-ACM/demo-ci-docker:latest | gzip - > main_${{ env.CONTAINER_TAG }}.tar.gz
       - uses: actions/upload-artifact@v4
         name: Upload artifact
         with:
-          path: '${{ github.workflow_sha }}.tar.gz'
-          name: 'container_tarball_${{ github.workflow_sha }}'
+          path: 'main_${{ env.CONTAINER_TAG }}.tar.gz'
+          name: 'container_tarball_${{ env.CONTAINER_TAG }}'
   test:
-    name: Test container functionality
+    name: Test container health
     runs-on: ubuntu-latest
     needs: compile
     steps:
       - uses: actions/download-artifact@v4
         name: Download workflow artifact
         with:
-          name: 'container_tarball_${{ github.workflow_sha }}'
+          name: 'container_tarball_${{ env.CONTAINER_TAG }}'
       - name: Load image
-        run: gunzip -c ${{ github.workflow_sha }}.tar.gz | docker load
+        run: gunzip -c main_${{ env.CONTAINER_TAG }}.tar.gz | docker load
       - name: Spin up container
-        run: docker run -d --name helloworld UND-ACM/hello:latest
+        run: docker run -d --name helloworld UND-ACM/demo-ci-docker:main_${{ env.CONTAINER_TAG }}
       - name: Await healthy or failed status
         run: |
           while(true); do
@@ -49,3 +51,17 @@ jobs:
               exit 1;
             fi
           done
+  publish:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/download-artifact@v4
+        name: Download workflow artifact
+        with:
+          name: 'container_tarball_${{ env.CONTAINER_TAG }}'
+      - name: Load image
+        run: gunzip -c main_${{ env.CONTAINER_TAG }}.tar.gz | docker load
+      - name: Log In to Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Publish Image
+        run: docker push --all-tags ghcr.io/UND-ACM/demo-ci-docker
