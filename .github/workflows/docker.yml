@@ -27,8 +27,10 @@ jobs:
         name: Download workflow artifact
         with:
           name: 'container_tarball_${{ github.workflow_sha }}'
+      - name: Unzip image
+        run: gunzip ${{ github.workflow_sha }}.tar.gz
       - name: Load image
-        run: gunzip -c ${{ github.workflow_sha }}.tar.gz | docker load
+        run: docker load container.tar
       - name: Spin up container
         run: docker run -d --name helloworld hello:latest
       - name: Await healthy or failed status
