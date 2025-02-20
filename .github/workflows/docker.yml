@@ -20,9 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build container
-        run: docker buildx build -f Dockerfile . -t UND-ACM/demo-ci-docker:latest -t UND-ACM/demo-ci-docker:${{ needs.tag.outputs.tag }}
+        run: docker buildx build -f Dockerfile . -t und-acm/demo-ci-docker:latest -t und-acm/demo-ci-docker:${{ needs.tag.outputs.tag }}
       - name: Export container
-        run: docker save UND-ACM/demo-ci-docker:latest | gzip - > ${{ needs.tag.outputs.tag }}.tar.gz
+        run: docker save und-acm/demo-ci-docker:latest | gzip - > ${{ needs.tag.outputs.tag }}.tar.gz
       - uses: actions/upload-artifact@v4
         name: Upload artifact
         with:
@@ -40,7 +40,7 @@ jobs:
       - name: Load image
         run: gunzip -c ${{ needs.tag.outputs.tag }}.tar.gz | docker load
       - name: Spin up container
-        run: docker run -d --name helloworld UND-ACM/demo-ci-docker:latest
+        run: docker run -d --name helloworld und-acm/demo-ci-docker:latest
       - name: Await healthy or failed status
         run: |
           while(true); do
