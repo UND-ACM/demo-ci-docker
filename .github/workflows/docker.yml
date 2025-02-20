@@ -63,7 +63,8 @@ jobs:
     name: Publish container to GitHub Container Registry
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      packages: write
+      contents: read
     needs: [test, tag]
     steps:
       - uses: actions/download-artifact@v4
